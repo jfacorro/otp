@@ -670,7 +670,25 @@ fun_info(Extra) ->
 %% BITS:
 
 bit_grp(Fs, Opts) ->
-    append([['<<'], [bit_elems(Fs, Opts)], ['>>']]).
+    case catch maybe_unicode_binary(Fs) of
+      UnicodeString when is_list(UnicodeString) ->
+        append([['<<', "\""], [UnicodeString], ["\"", '>>']]);
+      _ ->
+        append([['<<'], [bit_elems(Fs, Opts)], ['>>']])
+    end.
+
+maybe_unicode_binary(Fs) ->
+  Chars = [Char || { bin_element
+                   , _
+                   , {integer, _, Char}
+                   , default
+                   , default
+                   } <- Fs
+          ],
+  case length(Chars) =:= length(Fs) of
+    true  -> unicode:characters_to_list(Chars);
+    false -> false
+  end.
 
 bit_elems(Es, Opts) ->
     expr_list(Es, $,, fun bit_elem/2, Opts).
