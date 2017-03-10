@@ -50,7 +50,6 @@
 #endif
 
 #define NEED_CHILD_SETUP_DEFINES
-#define ERTS_WANT_BREAK_HANDLING
 #define ERTS_WANT_GOT_SIGUSR1
 #define WANT_NONBLOCKING    /* must define this to pull in defs from sys.h */
 #include "sys.h"
@@ -76,7 +75,7 @@ static erts_smp_rwmtx_t environ_rwmtx;
  * Don't need global.h, but bif_table.h (included by bif.h),
  * won't compile otherwise
  */
-#include "global.h" 
+#include "global.h"
 #include "bif.h"
 
 #include "erl_sys_driver.h"
@@ -280,8 +279,8 @@ static int crashdump_companion_cube_fd = -1;
 /* This is used by both the drivers and general I/O, must be set early */
 static int max_files = -1;
 
-/* 
- * a few variables used by the break handler 
+/*
+ * a few variables used by the break handler
  */
 #ifdef ERTS_SMP
 erts_smp_atomic32_t erts_break_requested;
@@ -298,7 +297,7 @@ volatile int erts_break_requested = 0;
 static struct termios initial_tty_mode;
 static int replace_intr = 0;
 /* assume yes initially, ttsl_init will clear it */
-int using_oldshell = 1; 
+int using_oldshell = 1;
 
 #ifdef ERTS_ENABLE_KERNEL_POLL
 
@@ -821,7 +820,7 @@ break_requested(void)
    * just set a flag - checked for and handled by
    * scheduler threads erts_check_io() (not signal handler).
    */
-#ifdef DEBUG			
+#ifdef DEBUG
   fprintf(stderr,"break!\n");
 #endif
   if (ERTS_BREAK_REQUESTED)
@@ -943,18 +942,18 @@ void erts_set_ignore_break(void) {
     sys_signal(SIGTSTP, SIG_IGN);
 }
 
-/* Don't use ctrl-c for break handler but let it be 
+/* Don't use ctrl-c for break handler but let it be
    used by the shell instead (see user_drv.erl) */
 void erts_replace_intr(void) {
   struct termios mode;
 
   if (isatty(0)) {
     tcgetattr(0, &mode);
-    
+
     /* here's an example of how to replace ctrl-c with ctrl-u */
     /* mode.c_cc[VKILL] = 0;
        mode.c_cc[VINTR] = CKILL; */
-    
+
     mode.c_cc[VINTR] = 0;	/* disable ctrl-c */
     tcsetattr(0, TCSANOW, &mode);
     replace_intr = 1;
@@ -1167,7 +1166,7 @@ struct erl_drv_entry fd_driver_entry = {
     fd_stop,
     output,
     ready_input,
-    ready_output, 
+    ready_output,
     "fd",
     NULL,
     NULL,
@@ -1379,7 +1378,7 @@ static char **build_unix_environment(char *block)
     char *cp;
     char **cpp;
     char** old_env;
-    
+
     ERTS_SMP_LC_ASSERT(erts_smp_lc_rwmtx_is_rlocked(&environ_rwmtx));
 
     cp = block;
@@ -1392,7 +1391,7 @@ static char **build_unix_environment(char *block)
     while (*old_env++ != NULL) {
 	len++;
     }
-    
+
     cpp = (char **) erts_alloc_fnf(ERTS_ALC_T_ENVIRONMENT,
 				   sizeof(char *) * (len+1));
     if (cpp == NULL) {
@@ -1406,7 +1405,7 @@ static char **build_unix_environment(char *block)
 	cp += strlen(cp) + 1;
 	len++;
     }
-    
+
     i = len;
     for (old_env = environ; *old_env; old_env++) {
 	char* old = *old_env;
@@ -1568,7 +1567,7 @@ static ErlDrvData spawn_start(ErlDrvPort port_num, char* name, SysDriverOpts* op
 	erts_free(ERTS_ALC_T_TMP, (void *) cmd_line);
 	errno = ENOMEM;
 	return ERL_DRV_ERROR_ERRNO;
-    } 
+    }
 
 #ifndef QNX
     /* Block child from SIGINT and SIGUSR1. Must be before fork()
@@ -1639,7 +1638,7 @@ static ErlDrvData spawn_start(ErlDrvPort port_num, char* name, SysDriverOpts* op
 #else					/* POSIX */
 	    (void) setsid();
 #endif
-	    
+
 	    unblock_signals();
 
 	    if (opts->spawn_type == ERTS_SPAWN_EXECUTABLE) {
@@ -1764,7 +1763,7 @@ static ErlDrvData spawn_start(ErlDrvPort port_num, char* name, SysDriverOpts* op
 	    qnx_spawn_options.iov[1] = ifd[1];  /* stdout for process */
 	if (opts->read_write & DO_WRITE)
 	    qnx_spawn_options.iov[0] = ofd[0];  /* stdin for process */
-	} 
+	}
     else {
 	if (opts->read_write & DO_READ)
 	    qnx_spawn_options.iov[4] = ifd[1];
@@ -1776,7 +1775,7 @@ static ErlDrvData spawn_start(ErlDrvPort port_num, char* name, SysDriverOpts* op
 	fcntl(i, F_SETFD, 1);
 
     qnx_spawn_options.flags = _SPAWN_SETSID;
-    if ((pid = spawnl(P_NOWAIT, SHELL, SHELL, "-c", cmd_line, 
+    if ((pid = spawnl(P_NOWAIT, SHELL, SHELL, "-c", cmd_line,
                       (char *) 0)) < 0) {
 	erts_free(ERTS_ALC_T_TMP, (void *) cmd_line);
         reset_qnx_spawn();
@@ -1792,11 +1791,11 @@ static ErlDrvData spawn_start(ErlDrvPort port_num, char* name, SysDriverOpts* op
     if (new_environ != environ)
 	erts_free(ERTS_ALC_T_ENVIRONMENT, (void *) new_environ);
 
-    if (opts->read_write & DO_READ) 
+    if (opts->read_write & DO_READ)
 	(void) close(ifd[1]);
     if (opts->read_write & DO_WRITE)
 	(void) close(ofd[0]);
-	
+
     if (opts->read_write & DO_READ) {
 	SET_NONBLOCKING(ifd[0]);
 	init_fd_data(ifd[0], port_num);
@@ -1835,7 +1834,7 @@ static reset_qnx_spawn()
     int i;
 
     /* Reset qnx_spawn_options */
-    qnx_spawn_options.flags = 0; 
+    qnx_spawn_options.flags = 0;
     qnx_spawn_options.iov[0] = 0xff;
     qnx_spawn_options.iov[1] = 0xff;
     qnx_spawn_options.iov[2] = 0xff;
@@ -1850,7 +1849,7 @@ static reset_qnx_spawn()
 
 static int fd_get_window_size(int fd, Uint32 *width, Uint32 *height)
 {
-#ifdef TIOCGWINSZ 
+#ifdef TIOCGWINSZ
     struct winsize ws;
     if (ioctl(fd,TIOCGWINSZ,&ws) == 0) {
 	*width = (Uint32) ws.ws_col;
@@ -1872,7 +1871,7 @@ static ErlDrvSSizeT fd_control(ErlDrvData drv_data,
     case FD_CTRL_OP_GET_WINSIZE:
 	{
 	    Uint32 w,h;
-	    if (fd_get_window_size(fd,&w,&h)) 
+	    if (fd_get_window_size(fd,&w,&h))
 		return 0;
 	    memcpy(resbuff,&w,sizeof(Uint32));
 	    memcpy(resbuff+sizeof(Uint32),&h,sizeof(Uint32));
@@ -1926,19 +1925,19 @@ static ErlDrvData fd_start(ErlDrvPort port_num, char* name,
      *
      * The only reason to set non-blocking mode on the output fd at all is
      * if it's something that can cause a write() to block, of course,
-     * i.e. primarily if it points to a tty, socket, pipe, or fifo. 
+     * i.e. primarily if it points to a tty, socket, pipe, or fifo.
      *
      * If we don't set non-blocking mode when we "should" have, and output
      * becomes blocked, the entire runtime system will be suspended - this
      * is normally bad of course, and can happen fairly "easily" - e.g. user
      * hits ^S on tty - but doesn't necessarily happen.
-     * 
+     *
      * If we do set non-blocking mode when we "shouldn't" have, the runtime
      * system will end up seeing EOF on the input fd (due to the preceding
      * process dying), which typically will cause the entire runtime system
      * to terminate immediately (due to whatever erlang process is seeing
      * the EOF taking it as a signal to halt the system). This is *very* bad.
-     * 
+     *
      * I.e. we should take a conservative approach, and only set non-
      * blocking mode when we a) need to, and b) are reasonably certain
      * that it won't be a problem. And as in the example above, the problem
@@ -2060,7 +2059,7 @@ static ErlDrvData fd_start(ErlDrvPort port_num, char* name,
     return res;
 }
 
-static void clear_fd_data(int fd) 
+static void clear_fd_data(int fd)
 {
     if (fd_data[fd].sz > 0) {
 	erts_free(ERTS_ALC_T_FD_ENTRY_BUF, (void *) fd_data[fd].buf);
@@ -2086,7 +2085,7 @@ static void fd_stop(ErlDrvData ev)  /* Does not close the fds */
     int ofd;
     int fd = (int)(long)ev;
     ErlDrvPort prt = driver_data[fd].port_num;
-    
+
 #if FDBLOCK
     if (driver_data[fd].blocking) {
         erts_free(ERTS_ALC_T_SYS_BLOCKING,driver_data[fd].blocking);
@@ -2297,7 +2296,7 @@ static int port_inp_failure(ErlDrvPort port_num, int ready_fd, int res)
     int err = errno;
 
     ASSERT(res <= 0);
-    (void) driver_select(port_num, ready_fd, ERL_DRV_READ|ERL_DRV_WRITE, 0); 
+    (void) driver_select(port_num, ready_fd, ERL_DRV_READ|ERL_DRV_WRITE, 0);
     clear_fd_data(ready_fd);
 
     if (driver_data[ready_fd].blocking && FDBLOCK) {
@@ -2377,13 +2376,13 @@ static void ready_input(ErlDrvData e, ErlDrvEvent ready_fd)
 	}
 	else if (res == 0)
 	    port_inp_failure(port_num, ready_fd, res);
-	else 
+	else
 	    driver_output(port_num, (char*) read_buf, res);
 	erts_free(ERTS_ALC_T_SYS_READ_BUF, (void *) read_buf);
     }
     else if (fd_data[ready_fd].remain > 0) { /* We try to read the remainder */
 	/* space is allocated in buf */
-	res = read(ready_fd, fd_data[ready_fd].cpos, 
+	res = read(ready_fd, fd_data[ready_fd].cpos,
 		   fd_data[ready_fd].remain);
 	if (res < 0) {
 	    if ((errno != EINTR) && (errno != ERRNO_BLOCK))
@@ -2393,7 +2392,7 @@ static void ready_input(ErlDrvData e, ErlDrvEvent ready_fd)
 	    port_inp_failure(port_num, ready_fd, res);
 	}
 	else if (res == fd_data[ready_fd].remain) { /* we're done  */
-	    driver_output(port_num, fd_data[ready_fd].buf, 
+	    driver_output(port_num, fd_data[ready_fd].buf,
 			  fd_data[ready_fd].sz);
 	    clear_fd_data(ready_fd);
 	}
@@ -2407,14 +2406,14 @@ static void ready_input(ErlDrvData e, ErlDrvEvent ready_fd)
 					     ERTS_SYS_READ_BUF_SZ);
 	/* We make one read attempt and see what happens */
 	res = read(ready_fd, read_buf, ERTS_SYS_READ_BUF_SZ);
-	if (res < 0) {  
+	if (res < 0) {
 	    if ((errno != EINTR) && (errno != ERRNO_BLOCK))
 		port_inp_failure(port_num, ready_fd, res);
 	}
 	else if (res == 0) {     	/* eof */
 	    port_inp_failure(port_num, ready_fd, res);
-	} 
-	else if (res < packet_bytes - fd_data[ready_fd].psz) { 
+	}
+	else if (res < packet_bytes - fd_data[ready_fd].psz) {
 	    memcpy(fd_data[ready_fd].pbuf+fd_data[ready_fd].psz,
 		   read_buf, res);
 	    fd_data[ready_fd].psz += res;
@@ -2432,7 +2431,7 @@ static void ready_input(ErlDrvData e, ErlDrvEvent ready_fd)
 		    bytes_left--;
 		    psz++;
 		}
-		
+
 		if (psz < packet_bytes) {
 		    fd_data[ready_fd].psz = psz;
 		    break;
@@ -2486,7 +2485,7 @@ static void ready_output(ErlDrvData e, ErlDrvEvent ready_fd)
     int n;
     struct iovec* iv;
     int vsize;
-    
+
 
     if ((iv = (struct iovec*) driver_peekq(ix, &vsize)) == NULL) {
 	driver_select(ix, ready_fd, ERL_DRV_WRITE, 0);
@@ -2602,7 +2601,7 @@ void erts_do_break_handling(void)
 {
     struct termios temp_mode;
     int saved = 0;
-    
+
     /*
      * Most functions that do_break() calls are intentionally not thread safe;
      * therefore, make sure that all threads but this one are blocked before
@@ -2620,14 +2619,14 @@ void erts_do_break_handling(void)
       tcsetattr(0,TCSANOW,&initial_tty_mode);
       saved = 1;
     }
-    
+
     /* call the break handling function, reset the flag */
     do_break();
 
     ERTS_UNSET_BREAK_REQUESTED;
 
     fflush(stdout);
-    
+
     /* after break we go back to saved settings */
     if (using_oldshell && !replace_intr) {
       SET_NONBLOCKING(1);
@@ -2750,7 +2749,7 @@ int fd, len;
 char *buf;
 {
     int i, done = 0;
-    
+
     do {
 	if ((i = write(fd, buf+done, len-done)) < 0) {
 	    if (errno != EINTR)
@@ -2892,14 +2891,14 @@ int fd;
             return c;
     }
 
-    return rbuf[0]; 
+    return rbuf[0];
 }
 
 
 extern int erts_initialized;
 void
 erl_assert_error(const char* expr, const char* func, const char* file, int line)
-{   
+{
     fflush(stdout);
     fprintf(stderr, "%s:%d:%s() Assertion failed: %s\n",
             file, line, func, expr);
@@ -2924,7 +2923,7 @@ erl_debug(char* fmt, ...)
 {
     char sbuf[1024];		/* Temporary buffer. */
     va_list va;
-    
+
     if (debug_log) {
 	va_start(va, fmt);
 	vsprintf(sbuf, fmt, va);
@@ -3261,9 +3260,9 @@ init_smp_sig_suspend(void) {
 int erts_darwin_main_thread_pipe[2];
 int erts_darwin_main_thread_result_pipe[2];
 
-static void initialize_darwin_main_thread_pipes(void) 
+static void initialize_darwin_main_thread_pipes(void)
 {
-    if (pipe(erts_darwin_main_thread_pipe) < 0 || 
+    if (pipe(erts_darwin_main_thread_pipe) < 0 ||
 	pipe(erts_darwin_main_thread_result_pipe) < 0) {
 	erts_exit(ERTS_ERROR_EXIT,"Fatal error initializing Darwin main thread stealing");
     }
