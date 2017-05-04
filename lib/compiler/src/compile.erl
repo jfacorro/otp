@@ -1342,14 +1342,18 @@ save_core_code(St) ->
     {ok,St#compile{core_code=cerl:from_records(St#compile.code)}}.
 
 beam_asm(#compile{ifile=File,code=Code0,
-		  abstract_code=Abst,mod_options=Opts0}=St) ->
+		  abstract_code=Abst,mod_options=Opts0,module=Module0}=St) ->
     Source = paranoid_absname(File),
     Opts1 = lists:map(fun({debug_info_key,_}) -> {debug_info_key,'********'};
 			 (Other) -> Other
 		      end, Opts0),
     Opts2 = [O || O <- Opts1, effects_code_generation(O)],
+    Module1 = case Module0 of
+                  [] -> element(1, Code0);
+                  _  -> Module0
+              end,
     case beam_asm:module(Code0, Abst, Source, Opts2) of
-	{ok,Code} -> {ok,St#compile{code=Code,abstract_code=[]}}
+	{ok,Code} -> {ok,St#compile{code=Code,abstract_code=[],module=Module1}}
     end.
 
 paranoid_absname(""=File) ->
@@ -1433,7 +1437,7 @@ embed_native_code(St, {Architecture,NativeCode}) ->
 %%  errors will be reported).
 
 effects_code_generation(Option) ->
-    case Option of 
+    case Option of
 	beam -> false;
 	report_warnings -> false;
 	report_errors -> false;
