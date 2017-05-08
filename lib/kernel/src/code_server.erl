@@ -54,7 +54,7 @@ start_link(Args) ->
     Parent = self(),
     Init = fun() -> init(Ref, Parent, Args) end,
     spawn_link(Init),
-    receive 
+    receive
 	{Ref,Res} -> Res
     end.
 
@@ -137,7 +137,7 @@ split_paths([], _S, Path, Paths) ->
 call(Req) ->
     Ref = erlang:monitor(process, ?MODULE),
     ?MODULE ! {code_call, self(), Req},
-    receive 
+    receive
 	{?MODULE, Reply} ->
             erlang:demonitor(Ref,[flush]),
 	    Reply;
@@ -149,7 +149,7 @@ reply(Pid, Res) ->
     Pid ! {?MODULE, Res}.
 
 loop(#state{supervisor=Supervisor}=State0) ->
-    receive 
+    receive
 	{code_call, Pid, Req} ->
 	    case handle_call(Req, Pid, State0) of
 		{reply, Res, State} ->
@@ -210,7 +210,7 @@ do_sys_cmd(SysState, get_status, Parent, Misc) ->
 do_sys_cmd(SysState, {debug, _What}, _Parent, Misc) ->
     {SysState,ok,Misc};
 do_sys_cmd(suspended, {change_code, Module, Vsn, Extra}, _Parent, Misc0) ->
-    {Res, Misc} = 
+    {Res, Misc} =
 	case catch ?MODULE:system_code_change(Misc0, Module, Vsn, Extra)  of
 	    {ok, _} = Ok -> Ok;
 	    Else -> {{error, Else}, Misc0}
@@ -378,7 +378,7 @@ handle_call(Other,_From, S) ->
 %% --------------------------------------------------------------
 
 %%
-%% Create the initial path. 
+%% Create the initial path.
 %%
 make_path(BundleDir, Bundles0) ->
     Bundles = choose_bundles(Bundles0),
@@ -418,7 +418,7 @@ is_vsn(Str) when is_list(Str) ->
     lists:all(fun is_numstr/1, Vsns).
 
 is_numstr(Cs) ->
-    lists:all(fun (C) when $0 =< C, C =< $9 -> true; 
+    lists:all(fun (C) when $0 =< C, C =< $9 -> true;
 		  (_)                       -> false
 	      end, Cs).
 
@@ -440,7 +440,7 @@ split2([C|S], Seps, Toks, Cs) ->
     end;
 split2([], _Seps, Toks, Cs) ->
     lists:reverse([lists:reverse(Cs)|Toks]).
-   
+
 join([H1, H2| T], S) ->
     H1 ++ S ++ join([H2| T], S);
 join([H], _) ->
@@ -480,7 +480,7 @@ make_path(BundleDir, [Bundle|Tail], Res) ->
 	    Ext = archive_extension(),
 	    Base = filename:basename(Bundle, Ext),
 	    Ebin2 = filename:join([BundleDir, Base ++ Ext, Base, "ebin"]),
-	    Ebins = 
+	    Ebins =
 		case split_base(Base) of
 		    {AppName,_} ->
 			Ebin3 = filename:join([BundleDir, Base ++ Ext,
@@ -508,7 +508,7 @@ try_ebin_dirs([]) ->
 
 %%
 %% Add the erl_prim_loader path.
-%% 
+%%
 %%
 add_loader_path(IPath0,Mode) ->
     {ok,PrimP0} = erl_prim_loader:get_path(),
@@ -534,7 +534,7 @@ patch_path(Path) ->
     case check_path(Path) of
 	{ok, NewPath} -> NewPath;
 	{error, _Reason} -> Path
-    end.	    
+    end.
 
 %% As the erl_prim_loader path includes the -pa and -pz
 %% directories they have to be removed first !!
@@ -543,7 +543,7 @@ exclude_pa_pz(P0,Pa,Pz) ->
     P = excl(Pz, lists:reverse(P1)),
     lists:reverse(P).
 
-excl([], P) -> 
+excl([], P) ->
     P;
 excl([D|Ds], P) ->
     excl(Ds, lists:delete(D, P)).
@@ -566,7 +566,7 @@ strip_path([P0|Ps], Mode) ->
     end;
 strip_path(_, _) ->
     [].
-    
+
 %%
 %% Add only non-existing paths.
 %% Also delete other versions of directories,
@@ -609,8 +609,8 @@ get_arg(Arg) ->
 %%
 exclude(Dir,Path) ->
     Name = get_name(Dir),
-    [D || D <- Path, 
-	  D =/= Dir, 
+    [D || D <- Path,
+	  D =/= Dir,
 	  get_name(D) =/= Name].
 
 %%
@@ -653,8 +653,8 @@ check_path(Path) ->
     PathChoice = init:code_path_choice(),
     ArchiveExt = archive_extension(),
     do_check_path(Path, PathChoice, ArchiveExt, []).
-    
-do_check_path([], _PathChoice, _ArchiveExt, Acc) -> 
+
+do_check_path([], _PathChoice, _ArchiveExt, Acc) ->
     {ok, lists:reverse(Acc)};
 do_check_path([Dir | Tail], PathChoice, ArchiveExt, Acc) ->
     case is_dir(Dir) of
@@ -675,11 +675,11 @@ do_check_path([Dir | Tail], PathChoice, ArchiveExt, Acc) ->
 			    do_check_path(Tail, PathChoice, ArchiveExt, [Dir2 | Acc]);
 			false ->
 			    {error, bad_directory}
-		    end;    
+		    end;
 		["ebin", App, OptArchive | RevTop] ->
 		    Ext = filename:extension(OptArchive),
 		    Base = filename:basename(OptArchive, Ext),
-		    Dir2 = 
+		    Dir2 =
 			if
 			    Ext =:= ArchiveExt, Base =:= App ->
 				%% .../app-vsn.ez/app-vsn/ebin
@@ -698,7 +698,7 @@ do_check_path([Dir | Tail], PathChoice, ArchiveExt, Acc) ->
 			    do_check_path(Tail, PathChoice, ArchiveExt, [Dir2 | Acc]);
 			false ->
 			    {error, bad_directory}
-		    end;    
+		    end;
 		_ ->
 		    {error, bad_directory}
 	    end
@@ -793,7 +793,7 @@ init_namedb(Path) ->
     Db = ets:new(code_names,[private]),
     init_namedb(lists:reverse(Path), Db),
     Db.
-    
+
 init_namedb([P|Path], Db) ->
     insert_dir(P, Db),
     init_namedb(Path, Db);
@@ -986,7 +986,7 @@ delete_name_dir(Dir, Db) ->
 	    Dir0 = del_ebin(Dir),
 	    case lookup_name(Name, Db) of
 		{ok, Dir0, _Base, _SubDirs} ->
-		    ets:delete(Db, Name), 
+		    ets:delete(Db, Name),
 		    true;
 		_ -> false
 	    end
@@ -1030,7 +1030,7 @@ do_dir(_Root,{lib_dir,Name,SubDir0},NameDb) ->
 		    %% Subdir is regular directory
 		    filename:join([Dir, SubDir])
 	    end;
-	_  -> 
+	_  ->
 	    {error, bad_name}
     end;
 do_dir(_Root,{priv_dir,Name},NameDb) ->
@@ -1049,7 +1049,7 @@ stick_dir(Dir, Stick, St) ->
 		false ->
 		    foreach(fun (M) -> ets:delete(Db, {sticky,M}) end, Mods)
 	    end;
-	Error -> 
+	Error ->
 	    Error
     end.
 
@@ -1129,9 +1129,9 @@ try_load_module_2(File, Mod, Bin, From, undefined, St) ->
 try_load_module_2(File, Mod, Bin, From, Architecture,
                   #state{moddb=Db}=St) ->
     case catch hipe_unified_loader:load_native_code(Mod, Bin, Architecture) of
-        {module,Mod} = Module ->
+        {module,Mod} ->
 	    ets:insert(Db, [{{native,Mod},true},{Mod,File}]),
-            {reply,Module,St};
+            maybe_call_on_load_function(Mod, From, St);
         no_native ->
             try_load_module_3(File, Mod, Bin, From, Architecture, St);
         Error ->
@@ -1152,6 +1152,22 @@ try_load_module_3(File, Mod, Bin, From, Architecture, St0) ->
 	     end,
     Res = erlang:load_module(Mod, Bin),
     handle_on_load(Res, Action, Mod, From, St0).
+
+-spec maybe_call_on_load_function(atom(), pid(), any()) ->
+  {reply, module(), state()}.
+maybe_call_on_load_function(Mod, From, St) ->
+  Attrs = Mod:module_info(attributes),
+  case proplists:get_value(on_load, Attrs) of
+    undefined ->
+      {reply, {module, Mod}, St};
+    [{Name, 0}] ->
+      Action = fun(_, S) -> {reply, {module, Mod}, S} end,
+      Fun    = fun() -> Res = Mod:Name(), exit(Res) end,
+      PidRef = spawn_monitor(Fun),
+      PidAction = {From, Action},
+      OnLoad = [{PidRef, Mod, [PidAction]} | St#state.on_load],
+      {noreply, St#state{on_load=OnLoad}}
+  end.
 
 hipe_result_to_status(Result, #state{moddb=Db}) ->
     case Result of
@@ -1204,7 +1220,7 @@ load_file_1(Mod, From, #state{path=Path}=St) ->
 mod_to_bin([Dir|Tail], Mod) ->
     File = filename:append(Dir, atom_to_list(Mod) ++ objfile_extension()),
     case erl_prim_loader:get_file(File) of
-	error -> 
+	error ->
 	    mod_to_bin(Tail, Mod);
 	{ok,Bin,_} ->
 	    case filename:pathtype(File) of
@@ -1218,7 +1234,7 @@ mod_to_bin([], Mod) ->
     %% At last, try also erl_prim_loader's own method
     File = to_list(Mod) ++ objfile_extension(),
     case erl_prim_loader:get_file(File) of
-	error -> 
+	error ->
 	    error;     % No more alternatives !
 	{ok,Bin,FName} ->
 	    {Mod,Bin,absname(FName)}
@@ -1390,9 +1406,10 @@ finish_on_load(PidRef, OnLoadRes, #state{on_load=OnLoad0}=St0) ->
 	    St#state{on_load=OnLoad}
     end.
 
-finish_on_load_1(Mod, OnLoadRes, Waiting, St) ->
+finish_on_load_1(Mod, OnLoadRes, Waiting, #state{moddb=Db}=St) ->
     Keep = OnLoadRes =:= ok,
-    erts_code_purger:finish_after_on_load(Mod, Keep),
+    ets:member(Db, {native,Mod})
+      orelse erts_code_purger:finish_after_on_load(Mod, Keep),
     Res = case Keep of
 	      false ->
 		  _ = finish_on_load_report(Mod, OnLoadRes),

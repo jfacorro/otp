@@ -24,6 +24,8 @@
 -export([module/4]).
 -export([encode/2]).
 
+-define(COMPILER_VSN,"4.4.4").
+
 -import(lists, [map/2,member/2,keymember/3,duplicate/2,splitwith/2]).
 -include("beam_opcodes.hrl").
 
@@ -50,8 +52,8 @@ on_load(Fs0, Attr0) ->
 			(F) ->
 			     F
 		     end, Fs0),
-	    Attr = proplists:delete(on_load, Attr0),
-	    {Fs,Attr}
+	    %% Attr = proplists:delete(on_load, Attr0),
+	    {Fs,Attr0}
     end.
 
 insert_on_load_instruction(Is0, Entry) ->
@@ -141,7 +143,7 @@ build_file(Code, Attr, Dict, NumLabels, NumFuncs, Abst, SourceFile, Opts) ->
 		   end,
 
     %% Create the line chunk.
-    
+
     LineChunk = chunk(<<"Line">>, build_line_table(Dict)),
 
     %% Create the attributes and compile info chunks.
@@ -415,7 +417,7 @@ flag_to_bit(unsigned)-> 16#00;
 %%flag_to_bit(exact)   -> 16#08;
 flag_to_bit(native)  -> 16#10;
 flag_to_bit({anno,_}) -> 0.
-    
+
 encode_list([H|T], Dict0, Acc) when not is_list(H) ->
     {Enc,Dict} = encode_arg(H, Dict0),
     encode_list(T, Dict, [Acc,Enc]);
